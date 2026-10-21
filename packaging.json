@@ -1,0 +1,10 @@
+{
+  "application": "music",
+  "directory": "music",
+  "packages": [
+    "nixe-music"
+  ],
+  "manifest": "Cargo.toml",
+  "prepare": [],
+  "binaries": []
+}
