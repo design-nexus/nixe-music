@@ -62,7 +62,7 @@ half-screen tile.
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/design-nexus/nixe/main/install.sh | bash -s -- music
+curl -fsSL https://raw.githubusercontent.com/design-nexus/nixe-music/main/install.sh | bash -s -- music
 ```
 
 This installs GTK 4 and GStreamer if they're missing, builds with Cargo, and installs
