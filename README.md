@@ -62,11 +62,11 @@ half-screen tile.
 ## Install
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/design-nexus/nixe-music/main/install.sh | bash -s -- music
+curl -fsSL https://raw.githubusercontent.com/design-nexus/nyx-music/main/install.sh | bash -s -- music
 ```
 
 This installs GTK 4 and GStreamer if they're missing, builds with Cargo, and installs
-`nixe-music` to `~/.local/bin` along with a launcher entry. Add `-s -- --default` after
+`nyx-music` to `~/.local/bin` along with a launcher entry. Add `-s -- --default` after
 `bash` to also make it the default app for audio files.
 
 To remove it, run the same line with `uninstall.sh` in place of `install.sh`. Add
@@ -76,7 +76,7 @@ episodes. Your music files are never touched.
 ## Usage
 
 ```
-nixe-music [OPTIONS] [FILES…]
+nyx-music [OPTIONS] [FILES…]
 ```
 
 | Option | What |
@@ -109,12 +109,12 @@ nixe-music [OPTIONS] [FILES…]
 
 | Path | What |
 | --- | --- |
-| `~/.config/nixe-music/settings.toml` | Preferences: library folders, playback, equalizer, theme |
-| `~/.config/nixe-music/themes/*.toml` | Your own themes |
-| `~/.local/share/nixe-music/library.db` | The library, play counts, playlists, favorite stations and podcast subscriptions |
-| `~/.local/share/nixe-music/podcasts/` | Downloaded episodes |
-| `~/.local/share/nixe-music/state.json` | The queue and position, for resuming |
-| `~/.cache/nixe-music/covers/` | Album covers, station logos and podcast art, scaled |
+| `~/.config/nyx-music/settings.toml` | Preferences: library folders, playback, equalizer, theme |
+| `~/.config/nyx-music/themes/*.toml` | Your own themes |
+| `~/.local/share/nyx-music/library.db` | The library, play counts, playlists, favorite stations and podcast subscriptions |
+| `~/.local/share/nyx-music/podcasts/` | Downloaded episodes |
+| `~/.local/share/nyx-music/state.json` | The queue and position, for resuming |
+| `~/.cache/nyx-music/covers/` | Album covers, station logos and podcast art, scaled |
 
 ## License
 

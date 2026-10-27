@@ -8,7 +8,7 @@
   page once and lists its groups (named by `Page::group`) on the left; `navigate("settings")`
   opens it. The equalizer is a card too (`panel_dialog.rs`), from the status bar or
   `navigate("equalizer")`. The theme, widgets, settings card and window frame come from
-  the `nixe-*` crates. Every
+  the `nyx-*` crates. Every
   colour is a `@theme_*` token; the analyzer gets its colours from `theme::palette()`.
 - Playback (`player/`): `engine.rs` wraps a `playbin` whose `audio-filter` is
   `audioconvert ! equalizer-10bands ! volume ! audioconvert ! spectrum`. The `volume`
@@ -26,7 +26,7 @@
   `with(...)` borrow while calling `emit`.
 - Library: `scan.rs` runs on a thread, diffs (mtime, size) against SQLite and reads
   only what changed; files under a missing root are kept (unplugged drive). Covers are
-  extracted once per album key into `~/.cache/nixe-music/covers/<fnv>{,-s}.jpg`.
+  extracted once per album key into `~/.cache/nyx-music/covers/<fnv>{,-s}.jpg`.
   The UI keeps every track in memory (`store`), grouped into albums on load.
   `db.rs` opens a connection per call so it can run anywhere.
 - Playlists store paths, not ids, so they survive rescans. Pages are `playlist:<id>`.
@@ -60,8 +60,8 @@
 - MPRIS (`mpris.rs`) runs zbus' blocking API on its own thread: it reads a shared
   snapshot, sends commands back over a channel, and emits PropertiesChanged when the
   UI thread asks. Bus name `org.mpris.MediaPlayer2.music`.
-- **Control** (`control.rs`): `nixe_core::control::serve_async` on the app's bus name, for
-  Nixe Assistant: `music.search`, `play` / `queue` (by name; `store::playlist_tracks`
+- **Control** (`control.rs`): `nyx_core::control::serve_async` on the app's bus name, for
+  Nyx Assistant: `music.search`, `play` / `queue` (by name; `store::playlist_tracks`
   answers later, hence async), `status`, `control`.
 - Checks: `cargo clippy --all-targets -- -D warnings`, `cargo test`. Visual check:
   `MUSIC_SNAPSHOT=/tmp/x.png [MUSIC_SNAPSHOT_PLAY=1] music --section now-playing`

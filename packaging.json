@@ -2,7 +2,7 @@
   "application": "music",
   "directory": "music",
   "packages": [
-    "nixe-music"
+    "nyx-music"
   ],
   "manifest": "Cargo.toml",
   "prepare": [],
@@ -13,9 +13,9 @@
       "test",
       "--locked",
       "-p",
-      "nixe-music",
+      "nyx-music",
       "--bin",
-      "nixe-music"
+      "nyx-music"
     ]
   ]
 }

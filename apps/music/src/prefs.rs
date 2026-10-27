@@ -1,6 +1,6 @@
-//! This app's own preferences (`~/.config/nixe-music/settings.toml`).
+//! This app's own preferences (`~/.config/nyx-music/settings.toml`).
 
-pub use nixe_theme::ThemeMode;
+pub use nyx_theme::ThemeMode;
 
 use crate::paths;
 use serde::{Deserialize, Serialize};
@@ -114,4 +114,4 @@ impl Default for Prefs {
     }
 }
 
-nixe_core::prefs_store!(Prefs);
+nyx_core::prefs_store!(Prefs);

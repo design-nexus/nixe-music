@@ -100,7 +100,7 @@ enum Signal {
 
 fn track_id(t: &Track) -> String {
     let id = if t.id > 0 { t.id.to_string() } else { format!("f{}", hash(&t.path.to_string_lossy())) };
-    format!("/io/github/design_nexus/nixe/Music/track/{id}")
+    format!("/io/github/design_nexus/nyx/Music/track/{id}")
 }
 
 fn value(v: Value<'_>) -> Option<OwnedValue> {
@@ -379,7 +379,7 @@ fn serve(state: Shared, tx: async_channel::Sender<Command>, signals: mpsc::Recei
         });
         drop(guard);
         if let Err(e) = r {
-            eprintln!("nixe-music: mpris: {e}");
+            eprintln!("nyx-music: mpris: {e}");
         }
     }
     Ok(())
@@ -477,7 +477,7 @@ pub fn start(app: &gtk::Application) {
             .name("mpris".into())
             .spawn(move || {
                 if let Err(e) = serve(shared, cmd_tx, sig_rx) {
-                    eprintln!("nixe-music: MPRIS unavailable: {e}");
+                    eprintln!("nyx-music: MPRIS unavailable: {e}");
                 }
             })
             .ok();

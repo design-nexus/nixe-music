@@ -1,9 +1,9 @@
-//! Music's tools on the control interface (`nixe_core::control`), for Nixe Assistant: find
+//! Music's tools on the control interface (`nyx_core::control`), for Nyx Assistant: find
 //! and play from the library, queue, and read what's playing, without the window.
 
 use crate::library::{store, Track};
 use crate::player::{self, queue::Repeat, State};
-use nixe_core::control::{text, Reply};
+use nyx_core::control::{text, Reply};
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::rc::Rc;

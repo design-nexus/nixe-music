@@ -7,7 +7,7 @@ use crate::sections::{self, Section};
 use crate::widgets;
 use crate::{fmt, panel_dialog, player, playerbar, prefs, settings_dialog, theme};
 use gtk::prelude::*;
-use nixe_ui::chrome;
+use nyx_ui::chrome;
 use gtk::{gdk, glib};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -54,7 +54,7 @@ pub fn present(app: &gtk::Application, section: Option<&str>) {
     theme::install();
     install_icons();
     build(app);
-    let start = section.map(String::from).unwrap_or_else(|| nixe_theme::start_page("now-playing", &prefs::get().last_section));
+    let start = section.map(String::from).unwrap_or_else(|| nyx_theme::start_page("now-playing", &prefs::get().last_section));
     navigate(&start);
     // Developer aid: MUSIC_SNAPSHOT=/path.png renders the window to a PNG
     // (invisibly) and quits, so layouts can be checked without a visible window.
@@ -116,8 +116,8 @@ fn build(app: &gtk::Application) {
     window.add_css_class("music-window");
     // No client-side titlebar: Hyprland manages the window.
     window.set_titlebar(Some(&gtk::Box::new(gtk::Orientation::Horizontal, 0)));
-    nixe_ui::keys::install(&window, nixe_ui::keys::Common { settings: Some(settings_dialog::open), ..Default::default() });
-    window.set_icon_name(Some("io.github.design_nexus.nixe.Music"));
+    nyx_ui::keys::install(&window, nyx_ui::keys::Common { settings: Some(settings_dialog::open), ..Default::default() });
+    window.set_icon_name(Some("io.github.design_nexus.nyx.Music"));
 
     let sections = sections::all();
 
@@ -880,7 +880,7 @@ type ToastAction<'a> = Option<(&'a str, Box<dyn Fn()>)>;
 
 fn show_toast(message: &str, action: ToastAction<'_>) {
     let Some(ui) = ui() else {
-        eprintln!("nixe-music: {message}");
+        eprintln!("nyx-music: {message}");
         return;
     };
     let overlay = ui.borrow().overlay.clone();
