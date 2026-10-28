@@ -1,6 +1,7 @@
-//! The main window: the navigation sidebar (its head holds the toggle and
-//! search), a stack of pages built the first time
-//! they're shown, the player bar and a status bar underneath.
+//! The main window: the Nyx header (the app and the page, search, the equalizer,
+//! the mini player and settings), the navigation sidebar with the library's size
+//! at its foot, and beside it a stack of pages built the first time they're shown
+//! over the player bar.
 
 use crate::library::store;
 use crate::sections::{self, Section};
@@ -18,6 +19,8 @@ struct Ui {
     stack: gtk::Stack,
     nav: gtk::Box,
     nav_items: HashMap<String, gtk::Button>,
+    /// The header's subtitle: the page you're on.
+    subtitle: gtk::Label,
     playlist_box: gtk::Box,
     search: gtk::SearchEntry,
     /// The current page's name, in the top bar.
@@ -128,31 +131,41 @@ fn build(app: &gtk::Application) {
 
     let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let mut nav_items = HashMap::new();
+    let mut counts = HashMap::new();
     let playlist_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let mut last_group = "";
     for s in sections.iter().filter(|s| s.nav) {
+        // The library needs no heading: it's what the sidebar starts with.
         if s.group != last_group {
-            let g = widgets::label(&s.group.to_uppercase(), "nav-group");
-            if last_group.is_empty() {
-                g.add_css_class("first");
+            if !last_group.is_empty() {
+                list.append(&group_heading(s.group));
             }
-            list.append(&g);
             last_group = s.group;
         }
         let (button, label) = nav_button(s.icon, s.title, s.description);
         label.add_css_class("compact-hide");
+        if COUNTED.contains(&s.id)
+            && let Some(content) = button.child().and_downcast::<gtk::Box>()
+        {
+            let count = widgets::label("", "nav-readout");
+            count.add_css_class("compact-hide");
+            content.append(&count);
+            counts.insert(s.id, count);
+        }
         let id = s.id;
         button.connect_clicked(move |_| navigate(id));
         list.append(&button);
         nav_items.insert(s.id.to_string(), button);
         if s.id == "queue" {
             list.append(&playlist_box);
-            let (new_button, label) = nav_button("list-add-symbolic", "New playlist", "Make a playlist, or import one");
-            label.add_css_class("compact-hide");
-            new_button.add_css_class("nav-add");
-            new_button.connect_clicked(|_| sections::playlist::new_dialog(Vec::new()));
-            list.append(&new_button);
         }
+    }
+    refresh_counts(&counts);
+    {
+        let c = counts.clone();
+        store::subscribe(&list, move |_| refresh_counts(&c));
+        let c = counts.clone();
+        crate::online::subscribe(&list, move |_| refresh_counts(&c));
     }
     let nav_scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -161,10 +174,8 @@ fn build(app: &gtk::Application) {
         .vexpand(true)
         .child(&list)
         .build();
-    let head = chrome::sidebar_head("Music", Some("Search the library (Ctrl+F)"));
-    head.toggle.connect_clicked(|_| toggle_sidebar());
-    nav.append(&head.root);
     nav.append(&nav_scroll);
+    nav.append(&library_readout());
 
     // ----- Content -----
     let stack = gtk::Stack::new();
@@ -175,32 +186,32 @@ fn build(app: &gtk::Application) {
     stack.set_transition_duration(if prefs::get().reduce_motion { 0 } else { 160 });
 
     let search = search_entry();
-    if let Some(find) = &head.search {
-        let s = search.clone();
-        find.connect_clicked(move |_| {
-            if s.is_visible() && s.text().is_empty() {
-                s.set_visible(false);
-            } else {
-                s.set_visible(true);
-                s.grab_focus();
-            }
-        });
-    }
+    // The pages, over the player bar.
     let content = gtk::Box::new(gtk::Orientation::Vertical, 0);
     content.set_hexpand(true);
-    content.append(&chrome::search_strip(&search));
     content.append(&stack);
+    content.append(&playerbar::build());
 
     let body = gtk::Box::new(gtk::Orientation::Horizontal, 0);
     body.set_vexpand(true);
     body.append(&nav);
     body.append(&content);
 
+    // The header: the app and the page, search, the equalizer, the mini player, Settings.
+    let header = chrome::app_header(&window, "music-note-symbolic", "Music");
+    header.center.append(&search);
+    let eq = nyx_ui::widgets::bar_button("music-equalizer-symbolic", "Equalizer");
+    eq.connect_clicked(|_| open_equalizer());
+    header.end.append(&eq);
+    let mini = nyx_ui::widgets::bar_button("view-restore-symbolic", "Mini player (Ctrl+M)");
+    mini.connect_clicked(|_| toggle_mini_player());
+    header.end.append(&mini);
+    header.end.append(&chrome::settings_button(settings_dialog::open));
+
     let frame = gtk::Box::new(gtk::Orientation::Vertical, 0);
     frame.add_css_class("window-frame");
+    frame.append(&header.root);
     frame.append(&body);
-    frame.append(&playerbar::build());
-    frame.append(&status_bar());
 
     let overlay = gtk::Overlay::new();
     overlay.set_child(Some(&frame));
@@ -256,6 +267,7 @@ fn build(app: &gtk::Application) {
         stack,
         nav,
         nav_items,
+        subtitle: header.subtitle.clone(),
         playlist_box: playlist_box.clone(),
         search,
         pages: HashMap::new(),
@@ -275,40 +287,66 @@ fn build(app: &gtk::Application) {
     refresh_playlists();
 }
 
-/// The library search: hidden until Ctrl+F or the sidebar's search button.
+/// The library search, in the middle of the header.
 fn search_entry() -> gtk::SearchEntry {
     let search = gtk::SearchEntry::new();
-    search.set_placeholder_text(Some("Search library"));
-    search.set_visible(false);
+    search.set_placeholder_text(Some("Search songs, albums, artists  (Ctrl+F)"));
+    search.update_property(&[gtk::accessible::Property::Label("Search the library")]);
+    search.add_css_class("bar-search");
+    search.set_width_chars(40);
     search.connect_search_changed(|e| on_search(&e.text()));
     search.connect_activate(|_| sections::search::focus_results());
-    search.connect_stop_search(|e| {
-        e.set_text("");
-        e.set_visible(false);
-    });
+    search.connect_stop_search(|e| e.set_text(""));
     search
 }
 
-/// The bar along the bottom: the shortcuts on the left; the library, the
-/// equalizer and settings on the right.
-fn status_bar() -> gtk::Box {
-    let bar = gtk::Box::new(gtk::Orientation::Horizontal, 16);
-    bar.add_css_class("status-bar");
-    let help = gtk::Button::new();
-    help.add_css_class("status-help");
-    let content = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-    content.append(&widgets::label("F1", "status-key"));
-    content.append(&widgets::label("Shortcuts", ""));
-    help.set_child(Some(&content));
-    help.set_tooltip_text(Some("Show the keyboard shortcuts"));
-    help.connect_clicked(|_| show_shortcuts());
-    bar.append(&help);
-    let spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-    spacer.set_hexpand(true);
-    bar.append(&spacer);
+/// Sections whose sidebar row shows how many things they hold.
+const COUNTED: &[&str] = &["songs", "albums", "artists", "genres", "radio", "podcasts"];
+
+fn refresh_counts(counts: &HashMap<&'static str, gtk::Label>) {
+    let loaded = store::loaded();
+    for (id, label) in counts {
+        let n = match *id {
+            "songs" if loaded => store::tracks().len(),
+            "albums" if loaded => store::albums().len(),
+            "artists" if loaded => store::artists().len(),
+            "genres" if loaded => store::genres().len(),
+            "radio" => crate::online::favourites().len(),
+            "podcasts" => crate::online::podcasts().len(),
+            _ => 0,
+        };
+        label.set_text(&if n == 0 { String::new() } else { fmt::thousands(n) });
+    }
+}
+
+/// A sidebar group's heading (Online, Playlists); Playlists has its + for a new one.
+fn group_heading(group: &str) -> gtk::Widget {
+    let heading = widgets::label(&group.to_uppercase(), "nav-group");
+    heading.add_css_class("compact-hide");
+    if group != "Playlists" {
+        return heading.upcast();
+    }
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    row.add_css_class("compact-hide");
+    heading.set_hexpand(true);
+    heading.set_xalign(0.0);
+    row.append(&heading);
+    let add = widgets::icon_button("list-add-symbolic", "New playlist, or import one");
+    add.add_css_class("flat");
+    add.add_css_class("nav-group-add");
+    add.set_valign(gtk::Align::Center);
+    add.connect_clicked(|_| sections::playlist::new_dialog(Vec::new()));
+    row.append(&add);
+    row.upcast()
+}
+
+/// The sidebar's foot: how big the library is, and a scan while one runs.
+fn library_readout() -> gtk::Label {
     let readout = widgets::label("", "status-readout");
-    readout.set_ellipsize(gtk::pango::EllipsizeMode::Start);
-    bar.append(&readout);
+    readout.add_css_class("nav-foot");
+    readout.add_css_class("compact-hide");
+    readout.set_xalign(0.0);
+    readout.set_ellipsize(gtk::pango::EllipsizeMode::End);
     let refresh = {
         let readout = readout.clone();
         move || {
@@ -331,18 +369,12 @@ fn status_bar() -> gtk::Box {
     };
     refresh();
     store::subscribe(&readout, move |_| refresh());
-    bar.append(&chrome::status_action("view-restore-symbolic", "Mini player (Ctrl+M)", toggle_mini_player));
-    bar.append(&chrome::status_action("music-equalizer-symbolic", "Equalizer", open_equalizer));
-    bar.append(&chrome::gear(settings_dialog::open));
-    bar
+    readout
 }
 
 /// The sidebar shows only icons: hide the labels (everything marked
 /// `compact-hide`), show what's marked `compact-show`, centre the icons and the toggle.
 fn apply_compact(nav: &gtk::Box, compact: bool) {
-    if let Some(head) = nav.first_child().and_downcast::<gtk::Box>() {
-        chrome::set_head_compact(&head, compact);
-    }
     if compact {
         nav.add_css_class("compact");
     } else {
@@ -418,7 +450,6 @@ fn install_keys(window: &gtk::ApplicationWindow, search: &gtk::SearchEntry) {
         }
         match key {
             gdk::Key::f if ctrl => {
-                s2.set_visible(true);
                 s2.grab_focus();
                 done
             }
@@ -487,9 +518,8 @@ fn install_keys(window: &gtk::ApplicationWindow, search: &gtk::SearchEntry) {
                 player::next();
                 done
             }
-            gdk::Key::Escape if s2.is_visible() => {
+            gdk::Key::Escape if !s2.text().is_empty() => {
                 s2.set_text("");
-                s2.set_visible(false);
                 done
             }
             _ => glib::Propagation::Proceed,
@@ -739,14 +769,16 @@ fn go(id: &str, record: bool) {
     }
     u.stack.set_visible_child_name(&id);
     u.current = id.clone();
-    chrome::set_title(&u.window, "Music", &page_title(&u.sections, &id));
+    let title = page_title(&u.sections, &id);
+    chrome::set_title(&u.window, "Music", &title);
+    u.subtitle.set_text(&title);
+    u.subtitle.set_visible(!title.is_empty());
     let search = u.search.clone();
     drop(u);
     if id != "search" {
         if !search.text().is_empty() {
             ui.borrow_mut().before_search.clear();
             search.set_text("");
-            search.set_visible(false);
         }
         prefs::update(|p| p.last_section = id);
     }

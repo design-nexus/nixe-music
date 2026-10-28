@@ -14,7 +14,7 @@ const GROUPS: &[(&str, &str, &str)] = &[
     ("Radio and podcasts", "music-radio-symbolic", "Country, new episodes"),
     ("Playback", "media-playback-start-symbolic", "Gapless, crossfade, leveling"),
     ("Spectrum analyzer", "music-spectrum-symbolic", "Style, detail, peaks"),
-    ("This window", "applications-graphics-symbolic", "Theme, glow, motion"),
+    ("This window", "applications-graphics-symbolic", "Theme, accent, motion"),
     ("Keyboard", "input-keyboard-symbolic", "Shortcuts"),
 ];
 

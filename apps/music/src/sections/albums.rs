@@ -28,35 +28,38 @@ pub fn build(page: &Page) {
     inner.set_transition_duration(if crate::prefs::get().reduce_motion { 0 } else { 160 });
     let grid = AlbumGrid::new(|a| open(&a));
     let grid_page = widgets::vbox(10);
+    // The page's head: its name and how many, then the order as a segmented switch.
     let toolbar = widgets::hbox(10);
     toolbar.add_css_class("list-toolbar");
-    let summary = widgets::label("", "dim");
-    summary.add_css_class("mono");
+    toolbar.add_css_class("page-head");
+    toolbar.append(&widgets::label("Albums", "page-head-title"));
+    let summary = widgets::label("", "page-head-count");
     summary.set_hexpand(true);
+    summary.set_xalign(0.0);
     toolbar.append(&summary);
-    toolbar.append(&widgets::label("Sort by", "dim"));
-    let sorts = widgets::opts(store::ALBUM_SORTS);
-    let sort = widgets::dropdown(&sorts, &crate::prefs::get().album_sort);
-    toolbar.append(&sort);
-    grid_page.append(&toolbar);
-    grid_page.append(&grid.root);
-    inner.add_named(&grid_page, Some("grid"));
+    // store::ALBUM_SORTS, with a shorter name for Recently added to fit the switch.
+    let sorts: Vec<(String, String)> = store::ALBUM_SORTS
+        .iter()
+        .map(|(id, name)| (id.to_string(), if *id == "added" { "Added" } else { *name }.to_string()))
+        .collect();
     let fill = {
         let (grid, summary) = (grid.clone(), summary.clone());
         move || {
             let albums = store::sorted_albums(&crate::prefs::get().album_sort);
-            summary.set_text(&fmt::count(albums.len(), "album", "albums"));
+            summary.set_text(&fmt::thousands(albums.len()));
             grid.set(&albums);
         }
     };
     let f = fill.clone();
-    sort.connect_selected_notify(move |d| {
-        if let Some((id, _)) = sorts.get(d.selected() as usize) {
-            let id = id.clone();
-            crate::prefs::update(|p| p.album_sort = id);
-            f();
-        }
+    let sort = nyx_ui::widgets::segmented(&sorts, &crate::prefs::get().album_sort, move |id| {
+        crate::prefs::update(|p| p.album_sort = id);
+        f();
     });
+    sort.set_tooltip_text(Some("Order the albums"));
+    toolbar.append(&sort);
+    grid_page.append(&toolbar);
+    grid_page.append(&grid.root);
+    inner.add_named(&grid_page, Some("grid"));
     let detail = widgets::vbox(0);
     detail.set_vexpand(true);
     inner.add_named(&detail, Some("detail"));

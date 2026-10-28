@@ -47,39 +47,51 @@ pub fn build(page: &Page) {
     );
     stack.add_named(&empty, Some("empty"));
 
-    let content = widgets::vbox(22);
-    // ----- Hero, over a blurred copy of the cover -----
-    let hero = widgets::hbox(24);
-    hero.add_css_class("now-hero");
-    let cover = Cover::new(200, false);
-    hero.append(&cover.root);
+    // Two columns over a blurred copy of the cover: the cover and the song on the
+    // left; the spectrum (or lyrics) and what's up next on the right. A half-screen
+    // window stacks them.
+    let cols = widgets::hbox(34);
+    cols.add_css_class("now-cols");
+    let left = widgets::vbox(18);
+    left.add_css_class("now-left");
+    let cover = Cover::new(300, false);
+    left.append(&cover.root);
+    let right = widgets::vbox(14);
+    right.set_hexpand(true);
+    cols.append(&left);
+    cols.append(&right);
     let backdrop = gtk::DrawingArea::new();
     backdrop.add_css_class("now-backdrop");
-    let hero_frame = gtk::Overlay::new();
-    hero_frame.add_css_class("now-hero-frame");
-    hero_frame.set_overflow(gtk::Overflow::Hidden);
-    hero_frame.set_child(Some(&backdrop));
-    hero_frame.add_overlay(&hero);
-    hero_frame.set_measure_overlay(&hero, true);
+    backdrop.set_vexpand(true);
+    let frame = gtk::Overlay::new();
+    frame.add_css_class("now-frame");
+    frame.set_overflow(gtk::Overflow::Hidden);
+    frame.set_child(Some(&backdrop));
     // The cover grows with the page, and shrinks in a half-screen window.
-    let c = cover.clone();
+    let (c, cl, lf) = (cover.clone(), cols.clone(), left.clone());
     let last = std::rc::Rc::new(std::cell::Cell::new(0));
     backdrop.connect_resize(move |_, w, _| {
-        let size = if crate::window::narrow() { 140 } else { (w as f64 * 0.22).clamp(200.0, 260.0) as i32 };
+        let narrow = crate::window::narrow();
+        let size = if narrow { 150 } else { (w as f64 * 0.26).clamp(220.0, 300.0) as i32 };
         if last.replace(size) != size {
-            let c = c.clone();
-            gtk::glib::idle_add_local_once(move || c.set_size(size));
+            let (c, cl, lf) = (c.clone(), cl.clone(), lf.clone());
+            gtk::glib::idle_add_local_once(move || {
+                c.set_size(size);
+                cl.set_orientation(if narrow { gtk::Orientation::Vertical } else { gtk::Orientation::Horizontal });
+                lf.set_orientation(if narrow { gtk::Orientation::Horizontal } else { gtk::Orientation::Vertical });
+            });
         }
     });
     let text = widgets::vbox(4);
-    text.set_valign(gtk::Align::End);
-    text.set_hexpand(true);
+    text.set_valign(gtk::Align::Start);
     let state = widgets::label("", "group-title");
     text.append(&state);
     let title = widgets::label("", "now-title");
     title.set_wrap(true);
     title.set_wrap_mode(gtk::pango::WrapMode::WordChar);
     title.set_lines(2);
+    // Wraps under the cover instead of widening its column.
+    title.set_max_width_chars(18);
     title.set_ellipsize(gtk::pango::EllipsizeMode::End);
     text.append(&title);
     let (artist_btn, artist_lbl) = link("now-artist");
@@ -90,8 +102,7 @@ pub fn build(page: &Page) {
     meta.add_css_class("mono");
     meta.add_css_class("detail-meta");
     text.append(&meta);
-    hero.append(&text);
-    content.append(&hero_frame);
+    left.append(&text);
 
     // ----- Spectrum or lyrics -----
     let an_card = widgets::vbox(10);
@@ -133,23 +144,24 @@ pub fn build(page: &Page) {
     views.add_named(&lyrics.root, Some("lyrics"));
     views.set_visible_child_name(&view);
     an_card.append(&views);
-    content.append(&an_card);
+    right.append(&an_card);
 
     // ----- Up next -----
     let next_group = widgets::vbox(6);
     next_group.append(&widgets::label("UP NEXT", "group-title"));
     let next_list = widgets::vbox(2);
     next_group.append(&next_list);
-    content.append(&next_group);
+    right.append(&next_group);
     // Scrolls rather than grow taller than the window, which would push the
     // player bar off the bottom.
     let scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
         .vscrollbar_policy(gtk::PolicyType::External)
-        .child(&content)
+        .child(&cols)
         .vexpand(true)
         .build();
-    stack.add_named(&scroll, Some("playing"));
+    frame.add_overlay(&scroll);
+    stack.add_named(&frame, Some("playing"));
     page.body.append(&stack);
 
     let artist_name: Rc<RefCell<String>> = Rc::default();

@@ -267,24 +267,20 @@ window.music-window list.table-card > row:selected {
   box-shadow: none;
 }
 
+/* Segments: the shared 2.0 look (a field track, the chosen one raised), a little
+   tighter so a page head's switch fits beside its title. */
+.segmented {
+  padding: 2px;
+}
+
 window.music-window .segmented button.segment {
-  min-height: 28px;
-  padding: 0 12px;
+  min-height: 26px;
+  padding: 0 10px;
   border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: alpha(@theme_text, 0.78);
-  font-weight: 600;
-  box-shadow: none;
+  font-size: 12.5px;
 }
 
 window.music-window .segmented button.segment:hover {
-  background: @row_hover;
-  color: @theme_text;
-}
-
-window.music-window .segmented button.segment:checked {
-  background: @nav_active;
   color: @theme_text;
 }
 
@@ -870,4 +866,174 @@ window.music-window button.dialog-nav.active image {
 
 .settings-dialog-main .settings-page.narrow {
   padding: 20px 20px 28px;
+}
+
+/* ---------- Nyx 2.0 ---------- */
+/* One surface: the header, sidebar, pages and the player card share the window's
+   background; spacing and soft fills separate them, never lines. */
+
+.list-toolbar,
+.page-hint {
+  border-bottom: none;
+}
+
+/* A page's head: its name in 600, how many beside it, controls at the right. */
+.list-toolbar.page-head {
+  padding: 0 18px;
+}
+
+.page-head-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.page-head-count {
+  font-size: 12px;
+  color: @theme_dim_text;
+  font-feature-settings: "tnum";
+}
+
+/* The sidebar's foot: the library's size, quiet. */
+.settings-navigation .nav-foot {
+  padding: 6px 10px 2px;
+  font-size: 11.5px;
+  color: @theme_text_tertiary;
+  font-feature-settings: "tnum";
+}
+
+window.music-window .settings-navigation button.nav-group-add {
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  margin-right: 6px;
+  color: @theme_dim_text;
+}
+
+/* The player: a soft card along the bottom of the page column. */
+.player-bar {
+  background: @theme_card;
+  border-top: none;
+  border-radius: 12px;
+  margin: 0 10px 10px;
+  padding: 10px 14px;
+  min-height: 48px;
+}
+
+.player-title {
+  font-weight: 500;
+}
+
+.player-artist {
+  font-size: 12px;
+}
+
+window.music-window label.time-readout,
+window.music-window label.time-readout.mono {
+  font-family: inherit;
+  font-size: 11px;
+  color: @theme_text_tertiary;
+  font-feature-settings: "tnum";
+}
+
+window.music-window button.transport-toggle:checked {
+  background: transparent;
+}
+
+/* Play: a light round button with the glyph in the background colour. */
+window.music-window button.play-button {
+  min-width: 36px;
+  min-height: 36px;
+  background: @theme_text;
+  color: @theme_bg;
+}
+
+window.music-window button.play-button:hover {
+  background: mix(@theme_text, @theme_bg, 0.12);
+}
+
+window.music-window button.play-button:active {
+  background: mix(@theme_text, @theme_bg, 0.22);
+}
+
+window.music-window scale.seek > trough,
+window.music-window scale.volume > trough {
+  min-height: 4px;
+  border-radius: 2px;
+  background: @track;
+}
+
+window.music-window scale.seek > trough > highlight {
+  min-height: 4px;
+  border-radius: 2px;
+  background: @theme_accent;
+}
+
+window.music-window scale.volume > trough > highlight {
+  min-height: 4px;
+  border-radius: 2px;
+  background: @theme_dim_text;
+}
+
+/* Albums: no tile behind a card, a thin ring around the cover on hover. */
+.album-grid > child,
+.album-grid > child:hover {
+  background: transparent;
+}
+
+.album-card .cover,
+.album-grid > child:hover .album-card .cover {
+  box-shadow: inset 0 0 0 1px alpha(white, 0.06);
+}
+
+.album-grid > child:hover .album-card .cover {
+  box-shadow: 0 0 0 1px alpha(@theme_text, 0.22);
+}
+
+.album-title {
+  font-weight: 500;
+}
+
+.album-artist {
+  font-size: 12px;
+}
+
+/* Now playing: two columns over the blurred cover; the analyzer draws straight on
+   the page, no frame around it. */
+.now-frame {
+  border-radius: 14px;
+}
+
+.now-cols {
+  padding: 22px 24px;
+}
+
+.now-title {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+window.music-window button.now-artist {
+  font-size: 14px;
+}
+
+.spectrum {
+  background: transparent;
+  border: none;
+}
+
+/* Numbers (times, counts, years) are the app font with even-width digits. */
+window.music-window label.mono {
+  font-family: inherit;
+  font-feature-settings: "tnum";
+}
+
+/* The window's titlebar is an empty box (Hyprland manages the window); without this
+   the GTK theme gives it a titlebar's height, a blank band above the header. */
+window.music-window > .titlebar {
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
 }
