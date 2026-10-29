@@ -55,6 +55,19 @@ pub fn build(page: &Page) {
         crate::prefs::update(|p| p.album_sort = id);
         f();
     });
+    let sort_sync = sort.clone();
+    store::subscribe(&sort, move |change| {
+        if change != store::Change::Library { return; }
+        let selected = crate::prefs::get().album_sort;
+        let mut child = sort_sync.first_child();
+        for (id, _) in store::ALBUM_SORTS {
+            let Some(widget) = child else { break };
+            child = widget.next_sibling();
+            if *id == selected && let Ok(button) = widget.downcast::<gtk::ToggleButton>() {
+                button.set_active(true);
+            }
+        }
+    });
     sort.set_tooltip_text(Some("Order the albums"));
     toolbar.append(&sort);
     grid_page.append(&toolbar);

@@ -68,7 +68,7 @@ pub fn subscribe(owner: &impl IsA<gtk::Widget>, f: impl Fn(Change) + 'static) {
     LISTENERS.with(|l| l.borrow_mut().push((owner.upcast_ref::<gtk::Widget>().downgrade(), Box::new(f))));
 }
 
-fn notify(change: Change) {
+pub(crate) fn notify(change: Change) {
     // Take the list so listeners may subscribe or read the store freely.
     let listeners = LISTENERS.with(|l| std::mem::take(&mut *l.borrow_mut()));
     let mut alive = Vec::with_capacity(listeners.len());

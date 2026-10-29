@@ -82,6 +82,12 @@ pub fn build(page: &Page) {
 
     // ----- Library -----
     let g = page.group("Library");
+    let (row, _) = widgets::choice_row("Sort albums by", "Order of albums in the library.",
+        widgets::opts(store::ALBUM_SORTS), &p.album_sort, |id| {
+            prefs::update(|p| p.album_sort = id);
+            store::notify(store::Change::Library);
+        });
+    g.add(&row);
     let list = widgets::vbox(6);
     g.add(&list);
     FOLDERS.with(|f| *f.borrow_mut() = Some(list.clone()));
