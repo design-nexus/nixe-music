@@ -2,9 +2,9 @@
 //! chosen group's options on the right, and a search across all of them.
 
 use crate::sections::settings;
-use crate::{widgets, window};
+use crate::{prefs, widgets, window};
 use gtk::prelude::*;
-use nyx_ui::settings_card::{self, Spec};
+use nyx_ui::settings_card::{self, About, Spec, Standard};
 
 pub use nyx_ui::settings_card::{escape, fit, focus_search, is_open};
 
@@ -14,11 +14,28 @@ const GROUPS: &[(&str, &str, &str)] = &[
     ("Radio and podcasts", "music-radio-symbolic", "Country, new episodes"),
     ("Playback", "media-playback-start-symbolic", "Gapless, crossfade, leveling"),
     ("Spectrum analyzer", "music-spectrum-symbolic", "Style, detail, peaks"),
-    ("This window", "applications-graphics-symbolic", "Theme, accent, motion"),
-    ("Keyboard", "input-keyboard-symbolic", "Shortcuts"),
 ];
 
-const SPEC: Spec = Spec { groups: GROUPS, search_text: None };
+const SPEC: Spec = Spec {
+    groups: GROUPS,
+    search_text: None,
+    standard: Some(Standard {
+        app: "music",
+        about: About {
+            name: "Music",
+            icon: "io.github.design_nexus.nyx.Music",
+            version: env!("CARGO_PKG_VERSION"),
+            description: "Your music library, playlists, internet radio and podcasts.",
+            licence: "MIT",
+            website: "https://github.com/design-nexus/nyx-music",
+            issues: "https://github.com/design-nexus/nyx-music/issues",
+            credits: &[("GStreamer", "playback"), ("Radio Browser", "internet radio directory")],
+        },
+        shortcuts: window::SHORTCUTS,
+        reduce_motion: || prefs::get().reduce_motion,
+        set_reduce_motion: |on| prefs::update(|p| p.reduce_motion = on),
+    }),
+};
 
 pub fn open() {
     let (Some(overlay), Some(window)) = (window::overlay(), window::window()) else { return };
